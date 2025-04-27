@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.VideosInfoMapper">
+    <!--  返回所有的视频列表  -->
+    <select id="getAllVideos" resultType="com.megrez.dokibackend.entity.Video">
+        SELECT v.*, u.username, u.avatar_url
+        FROM Videos v
+                 LEFT JOIN users u ON v.user_id = u.id
+    </select>
+    <!-- 根据关键词搜索视频 -->
+    <select id="searchVideosByKeyword" resultType="com.megrez.dokibackend.entity.Video">
+        SELECT DISTINCT v.*, u.username, u.avatar_url
+        FROM Videos v
+                 LEFT JOIN users u ON v.user_id = u.id
+                 LEFT JOIN video_tags ON v.id = video_tags.video_id
+        WHERE v.title LIKE CONCAT('%', #{keyword}, '%')
+           OR v.description LIKE CONCAT('%', #{keyword}, '%')
+           OR video_tags.tag LIKE CONCAT('%', #{keyword}, '%')
+           OR u.username LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY v.created_at
+    </select>
+
+    <!--  根据用户ID和视频ID查询点赞状态  -->
+    <select id="isLikeRecordExist" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+                      FROM video_likes
+                      WHERE user_id = #{userId}
+                        AND video_id = #{videoId})
+    </select>
+    <!-- 根据用户ID和视频ID查询收藏状态  -->
+    <select id="isCollectRecordExist" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+                      FROM favorites
+                      WHERE user_id = #{userId}
+                        AND video_id = #{videoId})
+    </select>
+    <!-- 根据用户名查询视频信息  -->
+    <select id="getVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
+        SELECT v.*, u.username, u.avatar_url
+        FROM Videos v
+                 LEFT JOIN users u ON v.user_id = u.id
+        WHERE u.username = #{userName}
+    </select>
+    <!--  根据用户名获取点赞视频列表  -->
+    <select id="getLikeVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
+        SELECT v.*, u.username, u.avatar_url
+        FROM Videos v
+                 LEFT JOIN video_likes l ON v.id = l.video_id
+                 LEFT JOIN users u ON v.user_id = u.id
+        WHERE l.user_id = (SELECT id
+                           FROM users
+                           WHERE username = #{userName})
+    </select>
+    <!--  根据用户名获取收藏视频列表  -->
+    <select id="getFavoriteVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
+        SELECT v.*, u.username, u.avatar_url
+        FROM Videos v
+                 LEFT JOIN favorites f ON v.id = f.video_id
+                 LEFT JOIN users u ON v.user_id = u.id
+        WHERE f.user_id = (SELECT id
+                           FROM users
+                           WHERE username = #{userName})
+    </select>
+
+    <!-- 向视频点赞关系表插入记录  -->
+    <insert id="addLikeRecord">
+        INSERT INTO video_likes (user_id, video_id)
+        VALUES (#{userId}, #{videoId})
+    </insert>
+    <!-- 向视频点赞关系表删除记录   -->
+    <delete id="delLikeRecord">
+        DELETE
+        FROM video_likes
+        WHERE user_id = #{userId}
+          AND video_id = #{videoId}
+    </delete>
+    <!-- 向视频收藏关系表插入记录 -->
+    <insert id="addCollectRecord">
+        INSERT INTO favorites (user_id, video_id)
+        VALUES (#{userId}, #{videoId})
+    </insert>
+    <!-- 向视频收藏关系表删除记录 -->
+    <delete id="delCollectRecord">
+        DELETE
+        FROM favorites
+        WHERE user_id = #{userId}
+          AND video_id = #{videoId}
+    </delete>
+</mapper>

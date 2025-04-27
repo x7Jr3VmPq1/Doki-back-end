@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.CommentMapper">
+    <!--  根据视频ID获取视频评论数  -->
+    <select id="getCommentsNumberByVideoId" resultType="integer">
+        SELECT COUNT(*)
+        FROM comments
+        WHERE video_id = #{videoId}
+    </select>
+    <!--  根据视频ID获取一级评论列表  -->
+    <select id="getCommentsByVideoId" resultType="com.megrez.dokibackend.dto.CommentsDTO">
+        SELECT c.id,
+               c.user_id,
+               u.username,
+               u.avatar_url,
+               c.content,
+               c.parent_comment_id,
+               c.like_count,
+               c.dislike_count,
+               c.created_at
+        FROM comments c
+                 JOIN users u ON c.user_id = u.id
+        WHERE c.video_id = #{videoId}
+          AND c.parent_comment_id IS NULL
+        ORDER BY c.created_at DESC
+    </select>
+    <!--  根据父级评论ID获取二级评论列表  -->
+    <select id="getSecondLevelComments" resultType="com.megrez.dokibackend.dto.CommentsDTO">
+        SELECT c.id,
+               c.user_id,
+               u.username,
+               u.avatar_url,
+               c.content,
+               c.parent_comment_id,
+               c.like_count,
+               c.created_at
+        FROM comments c
+                 JOIN users u ON c.user_id = u.id
+        WHERE c.parent_comment_id = #{parentCommentId}
+        ORDER BY c.created_at
+    </select>
+    <!--  添加评论记录  -->
+    <insert id="addComment" parameterType="com.megrez.dokibackend.dto.SingleCommentDTO">
+        INSERT INTO comments (video_id, user_id, content, parent_comment_id)
+        VALUES (#{videoId}, #{userId}, #{content}, #{parentCommentId})
+    </insert>
+    <!--  更改评论的点赞数量( +1 或 -1 )  -->
+    <update id="updateCommentLikeCount">
+        UPDATE comments
+        SET like_count = like_count + #{likeCount}
+        WHERE id = #{commentId}
+    </update>
+    <!--  更改评论的点踩数量( +1 或 -1 )  -->
+    <update id="updateCommentDislikeCount">
+        UPDATE comments
+        SET dislike_count = dislike_count + #{dislikeCount}
+        WHERE id = #{commentId}
+    </update>
+    <!--  根据评论ID获取一条指定的评论  -->
+    <select id="getCommentById" resultType="com.megrez.dokibackend.dto.CommentsDTO">
+        SELECT *, u.username
+        FROM comments c
+                 JOIN users u ON c.user_id = u.id
+        WHERE c.id = #{commentId}
+    </select>
+    <!--  根据用户ID获取所有评论  -->
+    <select id="getCommentsByUserId" resultType="com.megrez.dokibackend.dto.CommentsDTO">
+        SELECT c.id,
+               c.user_id,
+               u.username,
+               c.content,
+               c.video_id,
+               c.parent_comment_id,
+               c.like_count,
+               c.dislike_count,
+               c.created_at
+        FROM comments c
+                 JOIN users u ON c.user_id = u.id
+        WHERE c.user_id = #{userId}
+    </select>
+    <!--  根据评论ID删除记录  -->
+    <delete id="delCommentsById">
+        DELETE
+        FROM comments
+        WHERE id = #{commentId}
+    </delete>
+    <!-- 查询是否存在点赞记录 -->
+    <select id="isLikeRecordExist" resultType="java.lang.Boolean">
+        SELECT EXISTS(SELECT 1
+                      FROM comment_likes
+                      WHERE user_id = #{userId}
+                        AND comment_id = #{commentId})
+    </select>
+    <!-- 新增一条点赞记录   -->
+    <insert id="addLikeRecord">
+        INSERT INTO comment_likes (user_id, comment_id)
+        VALUES (#{userId}, #{commentId})
+    </insert>
+    <!-- 删除一条点赞记录  -->
+    <delete id="delLikeRecord">
+        DELETE
+        FROM comment_likes
+        WHERE user_id = #{userId}
+          AND comment_id = #{commentId}
+    </delete>
+</mapper>

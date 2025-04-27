@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.UserMapper">
+    <!-- 新增用户   -->
+    <insert id="addUser">
+        INSERT INTO users (username, password_hash, avatar_url, email, bio)
+        VALUES (#{userName}, #{passwordHash}, #{avatarUrl}, #{email}, #{bio})
+    </insert>
+    <!-- 查找用户是否存在   -->
+    <select id="countByUsername" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM users
+        WHERE username = #{username}
+        # 允许操作者id为空，这时是注册场景
+        <if test="userId != null">
+            AND id != #{userId} -- 排除当前用户
+        </if>
+    </select>
+    <!-- 通过邮箱查询用户信息   -->
+    <select id="getUserByUserEmail" resultType="com.megrez.dokibackend.entity.User">
+        SELECT *
+        FROM users
+        WHERE email = #{email}
+    </select>
+    <!--  根据用户ID获取用户信息  -->
+    <select id="getUserById" resultType="com.megrez.dokibackend.entity.User">
+        SELECT *
+        FROM users
+        WHERE id = #{id}
+    </select>
+    <!--  根据用户名获取用户信息  -->
+    <select id="getUserByUserName" resultType="com.megrez.dokibackend.entity.User">
+        SELECT *
+        FROM users
+        WHERE username = #{username}
+    </select>
+
+    <!-- 根据用户名模糊匹配用户信息 -->
+    <select id="searchUsers" resultType="com.megrez.dokibackend.entity.User">
+        SELECT *
+        FROM users
+        WHERE username LIKE CONCAT('%', #{userName}, '%')
+    </select>
+    <!--  根据用户ID修改用户信息  -->
+    <update id="updateUser">
+        UPDATE users
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="passwordHash != null">password_hash = #{passwordHash},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            <if test="phoneNumber != null">phone_number = #{phoneNumber},</if>
+            <if test="bio != null">bio = #{bio},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    <!-- 根据两个用户ID查询是否存在关注关系 -->
+    <select id="isFollowing" resultType="boolean">
+        SELECT EXISTS(SELECT 1
+                      FROM follows
+                      WHERE follower_id = #{followerId}
+                        AND following_id = #{followingId})
+    </select>
+    <!--  关注用户  -->
+    <insert id="addFollow">
+        INSERT INTO follows (follower_id, following_id)
+        VALUES (#{followerId}, #{followingId})
+    </insert>
+    <!--  取关用户  -->
+    <delete id="delFollow">
+        DELETE
+        FROM follows
+        WHERE follower_id = #{followerId}
+          AND following_id = #{followingId}
+    </delete>
+
+    <!-- 查询关注列表 -->
+    <select id="getFollowingList" resultType="com.megrez.dokibackend.vo.UserProfilesVO">
+        SELECT DISTINCT
+        u.*,
+        f.created_at,
+        CASE
+        WHEN #{operatorId} IS NULL THEN FALSE
+        WHEN f2.follower_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+        END AS is_following
+        FROM users u
+        JOIN follows f
+        ON f.follower_id = #{userId}
+        AND f.following_id = u.id
+        LEFT JOIN follows f2
+        ON f2.follower_id = #{operatorId}
+        AND f2.following_id = u.id
+        <where>
+            <if test="lastUserId != null">
+                f.created_at &lt;
+                (SELECT f2.created_at
+                FROM follows f2
+                WHERE f2.following_id = #{lastUserId}
+                AND f2.follower_id = #{userId})
+            </if>
+        </where>
+        ORDER BY f.created_at DESC
+        LIMIT #{size}
+    </select>
+    <select id="getFansList" resultType="com.megrez.dokibackend.vo.UserProfilesVO">
+        SELECT DISTINCT
+        u.*,
+        f.created_at,
+        CASE
+        WHEN #{operatorId} IS NULL THEN FALSE
+        WHEN f2.follower_id IS NOT NULL THEN TRUE
+        ELSE FALSE
+        END AS is_following
+        FROM users u
+        JOIN follows f
+        ON f.following_id = #{userId}
+        AND f.follower_id = u.id
+        LEFT JOIN follows f2
+        ON f2.follower_id = #{operatorId}
+        AND f2.following_id = u.id
+        <where>
+            <if test="lastUserId != null">
+                f.created_at &lt;
+                (SELECT f2.created_at
+                FROM follows f2
+                WHERE f2.following_id = #{lastUserId}
+                AND f2.follower_id = #{userId})
+            </if>
+        </where>
+        ORDER BY f.created_at DESC
+        LIMIT #{size}
+    </select>
+
+
+</mapper>

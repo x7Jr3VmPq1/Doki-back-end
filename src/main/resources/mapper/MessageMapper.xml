@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.MessageMapper">
+    <!-- 根据会话ID获取对应的消息记录 -->
+    <select id="getMessagesByConversationId" resultType="com.megrez.dokibackend.entity.Message">
+        SELECT *, u.avatar_url senderAvatarUrl, u.username senderName
+        FROM messages as m
+                 JOIN users as u on m.sender_id = u.id
+        WHERE conversation_id = #{conversationId}
+          AND sent_at >
+              (SELECT COALESCE(last_deleted_at, '1000-01-01')
+               FROM conversations
+               WHERE conversations.id = #{conversationId}
+                 AND conversations.user_id = #{userId})
+    </select>
+
+    <!-- 根据用户ID获取会话列表 -->
+    <select id="getConversationListByUserId" resultType="com.megrez.dokibackend.entity.Conversation">
+        SELECT *
+        FROM conversations
+        WHERE user_id = #{userId}
+    </select>
+
+    <!--  创建一个新会话  -->
+    <insert id="createConversation" parameterType="com.megrez.dokibackend.entity.Conversation">
+        INSERT INTO conversations (id, conversation_type, user_id, last_deleted_at, user_joined_at, created_at)
+        VALUES (#{id}, #{conversationType}, #{userId}, #{lastDeletedAt}, #{userJoinedAt}, #{createdAt})
+    </insert>
+
+    <!--  插入一条消息记录  -->
+    <insert id="insertMessage" parameterType="com.megrez.dokibackend.entity.Message">
+        INSERT INTO messages (sender_id, message, attachment_url, sent_at, is_read,
+                              is_revoked, reply_to_id, conversation_id)
+        VALUES (#{senderId}, #{message}, #{attachmentUrl}, #{sentAt}, #{isRead},
+                #{isRevoked}, #{replyToId}, #{conversationId})
+    </insert>
+    <!--  查询两个用户是否存在会话关系  -->
+    <select id="getConversationByUsers" resultType="string">
+        SELECT c1.id
+        FROM conversations as c1
+                 JOIN conversations AS c2
+                      ON (c1.user_id = #{userId} AND c2.user_id = #{targetUserId})
+        WHERE c1.conversation_type = 'PRIVATE'
+          AND c2.conversation_type = 'PRIVATE'
+          AND c1.id = c2.id;;
+    </select>
+
+    <!--  根据会话ID查询会话所有者信息  -->
+    <select id="getUserInfoByConversationId" resultType="com.megrez.dokibackend.entity.User">
+        SELECT *
+        FROM users
+        WHERE id in (SELECT DISTINCT user_id FROM conversations WHERE id = #{conversationId});
+    </select>
+
+    <!--  根据会话ID和用户ID标记所有消息为已读  -->
+    <update id="markAllMessagesAsRead">
+        UPDATE messages
+        SET is_read = true
+        WHERE conversation_id = #{conversationId}
+          AND sender_id != #{userId}
+    </update>
+</mapper>

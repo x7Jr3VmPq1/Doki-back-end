@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.VideoMapper">
+    <!--  这个接口用来上传和删除视频  -->
+
+    <!--  向待上传视频表(pending_videos)中添加一条记录  -->
+    <insert id="addPendingVideo">
+        INSERT INTO pending_videos (user_id, video_url, status)
+        VALUES (#{userId}, #{videoUrl}, #{status})
+    </insert>
+
+    <!-- 根据用户ID查询待上传视频在文件服务器的URL -->
+    <select id="getPendingVideoUrlByUserId" resultType="java.lang.String">
+        SELECT video_url
+        FROM pending_videos
+        WHERE user_id = #{userId}
+    </select>
+
+
+    <!--  根据用户ID删除待上传记录(如果记录存在)  -->
+    <delete id="delPendingVideoByUserId">
+        DELETE
+        FROM pending_videos
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!--  根据视频ID查询视频信息  -->
+    <select id="getVideoById" resultType="com.megrez.dokibackend.entity.Video">
+        SELECT *
+        FROM videos
+        WHERE id = #{videoId}
+    </select>
+    <!--  查询视频标签  -->
+    <select id="getVideoTagsByVideoId" resultType="java.lang.String">
+        SELECT tag
+        FROM video_tags
+        WHERE video_id = #{videoId}
+    </select>
+    <!--  写入新的视频信息  -->
+    <insert id="insertVideo" parameterType="com.megrez.dokibackend.entity.Video" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO videos (user_id, title, description, video_url, thumbnail_url, duration, views, category,
+                            like_count, comment_count, favorite_count)
+        VALUES (#{userId}, #{title}, #{description}, #{videoUrl}, #{thumbnailUrl}, #{duration}, #{views}, #{category},
+                0, 0, 0)
+    </insert>
+    <!--  删除视频  -->
+    <delete id="delVideoByVideoId">
+        DELETE
+        FROM videos
+        WHERE id = #{videoId}
+    </delete>
+    <!--  新增视频标签  -->
+    <insert id="insertVideoTag">
+        INSERT INTO video_tags (video_id, tag)
+        VALUES (#{videoId}, #{tag})
+    </insert>
+
+</mapper>

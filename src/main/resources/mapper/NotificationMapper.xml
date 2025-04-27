@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.megrez.dokibackend.mapper.NotificationMapper">
+
+    <!--  插入一条系统通知记录  -->
+    <insert id="addNotification" parameterType="com.megrez.dokibackend.entity.Notification">
+        INSERT INTO notifications (user_id, type, message, is_read, operator_id, video_id, comment_id)
+        VALUES (#{userId}, #{type}, #{message}, #{isRead}, #{operatorId}, #{videoId}, #{commentId})
+    </insert>
+    <!--  根据用户ID获取对应类型的通知  -->
+    <select id="getNotificationsByUserIdAndType" resultType="com.megrez.dokibackend.vo.NotificationVO">
+        SELECT n.id,
+               n.user_id,
+               n.type,
+               n.message,
+               n.is_read,
+               n.created_at,
+               u.avatar_url,
+               u.username AS operator_name,
+               v.id       AS video_id,
+               v.title    AS video_title,
+               c.id       AS comment_id,
+               c.content  AS comment_content
+        FROM notifications n
+                 LEFT JOIN users u ON n.operator_id = u.id
+                 LEFT JOIN videos v ON n.video_id = v.id
+                 LEFT JOIN comments c ON n.comment_id = c.id
+        WHERE n.type = #{type}
+          AND n.user_id = #{userId}
+        ORDER BY n.created_at DESC
+    </select>
+</mapper>
