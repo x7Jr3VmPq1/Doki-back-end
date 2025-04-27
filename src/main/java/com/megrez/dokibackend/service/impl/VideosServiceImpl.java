@@ -133,8 +133,8 @@ public class VideosServiceImpl implements VideosService {
     /**
      * 根据用户名获取视频列表。
      *
-     * @param userId
-     * @param userName
+     * @param userId 用户ID
+     * @param userName 用户名
      * @return
      */
     @Override
