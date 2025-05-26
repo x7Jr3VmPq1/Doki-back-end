@@ -1,5 +1,6 @@
 package com.megrez.dokibackend.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -31,6 +32,7 @@ public class VideoVO {
     // 视频播放量
     private Integer views;
     // 视频创建时间
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createdAt;
     // 视频分类
     private String category;

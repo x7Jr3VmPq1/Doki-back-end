@@ -14,6 +14,8 @@ import com.megrez.dokibackend.event.Payload;
 import com.megrez.dokibackend.mapper.VideoMapper;
 import com.megrez.dokibackend.mapper.VideosInfoMapper;
 import com.megrez.dokibackend.service.VideosService;
+import com.megrez.dokibackend.utils.ElasticsearchUtil;
+import com.megrez.dokibackend.utils.videoDocument;
 import com.megrez.dokibackend.vo.VideoVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +29,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -88,8 +90,22 @@ public class VideosServiceImpl implements VideosService {
      * @return
      */
     @Override
-    public List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) {
+    public List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) throws IOException {
+        // 使用搜索引擎进行搜索
+        List<Map<String, Object>> result = ElasticsearchUtil.searchDocument(ElasticsearchUtil.VIDEOS_INDEX, keyword);
+        // 转换为  VideoVO 对象
         List<VideoVO> videoVOList = new ArrayList<>();
+        for (Map<String, Object> document : result) {
+            videoDocument videoDocument = ElasticsearchUtil.objectMapper.convertValue(document, videoDocument.class);
+            VideoVO videoVO = new VideoVO();
+            BeanUtils.copyProperties(videoDocument, videoVO);
+            if (userId != null) {
+                videoVO.setLiked(videosInfoMapper.isLikeRecordExist(userId, videoVO.getId()));
+                videoVO.setFavorited(videosInfoMapper.isCollectRecordExist(userId, videoVO.getId()));
+            }
+            videoVOList.add(videoVO);
+        }
+       /* // 下面的方法暂时不需要 ...
         // 遍历从数据库中获取的所有视频信息，并将其转换为 VideoVO 对象
         for (Video video : videosInfoMapper.searchVideosByKeyword(keyword)) {
             // 获取视频标签
@@ -104,7 +120,7 @@ public class VideosServiceImpl implements VideosService {
             // 使用 BeanUtils 将 Video 对象的属性复制到 VideoVO 对象中
             BeanUtils.copyProperties(video, videoVO);
             videoVOList.add(videoVO);
-        }
+        }*/
         return videoVOList;
     }
 
@@ -133,7 +149,7 @@ public class VideosServiceImpl implements VideosService {
     /**
      * 根据用户名获取视频列表。
      *
-     * @param userId 用户ID
+     * @param userId   用户ID
      * @param userName 用户名
      * @return
      */

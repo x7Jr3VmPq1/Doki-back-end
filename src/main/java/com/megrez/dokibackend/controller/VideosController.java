@@ -14,6 +14,7 @@ import com.megrez.dokibackend.service.VideosService;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -50,7 +51,12 @@ public class VideosController {
     public Result<List<VideoVO>> searchVideosByKeyword(@RequestParam String keyword, HttpServletRequest request) {
         Integer userId = (Integer) request.getAttribute("userId");
         log.info("searchVideosByKeyword: userId={},keyword={}", userId, keyword);
-        List<VideoVO> videoDTOList = videosService.searchVideosByKeyword(keyword, userId);
+        List<VideoVO> videoDTOList = null;
+        try {
+            videoDTOList = videosService.searchVideosByKeyword(keyword, userId);
+        } catch (IOException e) {
+            return Result.error("搜索失败");
+        }
         return Result.success(videoDTOList);
     }
 

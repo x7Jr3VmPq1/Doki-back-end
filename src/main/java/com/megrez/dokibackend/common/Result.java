@@ -17,14 +17,14 @@ public class Result<T> implements Serializable {
 
     // 进行增删改操作返回此接口
     public static <T> Result<T> success() {
-        Result<T> result = new Result<T>();
+        Result<T> result = new Result<>();
         result.code = ResponseCode.SUCCESS;
         return result;
     }
 
     // 进行查询操作返回此接口
     public static <T> Result<T> success(T object) {
-        Result<T> result = new Result<T>();
+        Result<T> result = new Result<>();
         result.data = object;
         result.code = ResponseCode.SUCCESS;
         return result;
@@ -32,7 +32,7 @@ public class Result<T> implements Serializable {
 
     // 失败返回此接口
     public static <T> Result<T> error(String msg) {
-        Result<T> result = new Result<T>();
+        Result<T> result = new Result<>();
         result.msg = msg;
         result.code = ResponseCode.INTERNAL_SERVER_ERROR;
         return result;
