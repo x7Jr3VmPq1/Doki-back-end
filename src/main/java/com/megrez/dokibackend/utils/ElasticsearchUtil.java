@@ -3,6 +3,7 @@ package com.megrez.dokibackend.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.http.HttpHost;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.index.IndexRequest;
@@ -18,9 +19,12 @@ import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -45,11 +49,11 @@ public class ElasticsearchUtil {
     public static final String VIDEOS_INDEX = "videos";
 
     // 插入/更新文档
-    public static <T> String insertDocument(String index, String id, T document) throws IOException {
+    public static <T> void insertDocument(String index, String id, T document) throws IOException {
         String json = objectMapper.writeValueAsString(document);
         IndexRequest request = new IndexRequest(index).id(id).source(json, XContentType.JSON);
         IndexResponse response = client.index(request, RequestOptions.DEFAULT);
-        return response.getId();
+        response.getId();
     }
 
     // 获取文档
@@ -84,10 +88,52 @@ public class ElasticsearchUtil {
         return result;
     }
 
+    // 高亮查询
+    public static List<Map<String, Object>> searchDocumentWithHighlight(String index, String keyword) throws IOException {
+        // 1.准备Request
+        SearchRequest request = new SearchRequest(index);
+        request.source()
+                .query(QueryBuilders.matchQuery("title", keyword))
+                .highlighter(
+                        // 设置高亮字段
+                        new HighlightBuilder()
+                                .field("title")
+                                // 设置高亮标签
+                                .preTags("<span style='color:skyblue'>")
+                                .postTags("</span>")
+                );
+        // 2.发送请求
+        SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+        // 3.解析响应
+        SearchHits searchHits = response.getHits();
+        SearchHit[] hits = searchHits.getHits();
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (SearchHit hit : hits) {
+            Map<String, Object> sourceAsMap = hit.getSourceAsMap();
+            // 获取高亮字段
+            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
+            // 获取高亮字段值
+            if (!CollectionUtils.isEmpty(Collections.singleton(highlightFields))) {
+                // 根据字段名获取高亮结果
+                HighlightField highlightField = highlightFields.get("title");
+                if (highlightField != null) {
+                    // 获取高亮值
+                    String title = highlightField.getFragments()[0].string();
+                    // 覆盖非高亮结果
+                    sourceAsMap.put("title", title);
+                }
+                result.add(sourceAsMap);
+            }
+        }
+        return result;
+    }
+
     // 关闭客户端（在应用关闭时调用）
     public static void close() throws IOException {
         if (client != null) {
             client.close();
         }
     }
+
+
 }

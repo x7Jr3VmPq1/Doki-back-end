@@ -2,21 +2,26 @@ package com.megrez.dokibackend.service.impl;
 
 import com.megrez.dokibackend.common.FileServerURL;
 import com.megrez.dokibackend.common.NotificationType;
+import com.megrez.dokibackend.config.RabbitConfig;
 import com.megrez.dokibackend.controller.WebSocketController;
 import com.megrez.dokibackend.dto.CommentsDTO;
 import com.megrez.dokibackend.dto.SingleCommentDTO;
 import com.megrez.dokibackend.dto.VideoDTO;
 import com.megrez.dokibackend.dto.VideoUploadInfoDTO;
 import com.megrez.dokibackend.entity.Comment;
+import com.megrez.dokibackend.entity.User;
 import com.megrez.dokibackend.entity.Video;
 import com.megrez.dokibackend.entity.VideoTag;
 import com.megrez.dokibackend.event.Payload;
+import com.megrez.dokibackend.mapper.UserMapper;
 import com.megrez.dokibackend.mapper.VideoMapper;
 import com.megrez.dokibackend.mapper.VideosInfoMapper;
 import com.megrez.dokibackend.service.VideosService;
 import com.megrez.dokibackend.utils.ElasticsearchUtil;
+import com.megrez.dokibackend.utils.TransactionCallbackUtil;
 import com.megrez.dokibackend.utils.videoDocument;
 import com.megrez.dokibackend.vo.VideoVO;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,6 +34,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,13 +53,18 @@ public class VideosServiceImpl implements VideosService {
     private final VideosInfoMapper videosInfoMapper;
     private final VideoMapper videoMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserMapper userMapper;
+    private final RabbitTemplate rabbitTemplate;
 
     public VideosServiceImpl(VideosInfoMapper videosInfoMapper,
                              VideoMapper videoMapper,
-                             ApplicationEventPublisher eventPublisher) {
+                             UserMapper userMapper,
+                             ApplicationEventPublisher eventPublisher, RabbitTemplate rabbitTemplate) {
         this.videosInfoMapper = videosInfoMapper;
         this.videoMapper = videoMapper;
         this.eventPublisher = eventPublisher;
+        this.userMapper = userMapper;
+        this.rabbitTemplate = rabbitTemplate;
     }
 
     /**
@@ -92,13 +103,14 @@ public class VideosServiceImpl implements VideosService {
     @Override
     public List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) throws IOException {
         // 使用搜索引擎进行搜索
-        List<Map<String, Object>> result = ElasticsearchUtil.searchDocument(ElasticsearchUtil.VIDEOS_INDEX, keyword);
+        List<Map<String, Object>> result = ElasticsearchUtil.searchDocumentWithHighlight(ElasticsearchUtil.VIDEOS_INDEX, keyword);
         // 转换为  VideoVO 对象
         List<VideoVO> videoVOList = new ArrayList<>();
         for (Map<String, Object> document : result) {
             videoDocument videoDocument = ElasticsearchUtil.objectMapper.convertValue(document, videoDocument.class);
             VideoVO videoVO = new VideoVO();
             BeanUtils.copyProperties(videoDocument, videoVO);
+            // 如果用户不为空，则根据用户ID和视频ID查询点赞和收藏信息
             if (userId != null) {
                 videoVO.setLiked(videosInfoMapper.isLikeRecordExist(userId, videoVO.getId()));
                 videoVO.setFavorited(videosInfoMapper.isCollectRecordExist(userId, videoVO.getId()));
@@ -293,7 +305,7 @@ public class VideosServiceImpl implements VideosService {
      */
     @Override
     @Transactional
-    public void publishVideo(VideoUploadInfoDTO videoUploadInfoDTO, Integer userId) {
+    public void publishVideo(VideoUploadInfoDTO videoUploadInfoDTO, Integer userId) throws IOException {
         // 从待上传视频表中获取视频URL
         String videoUrl = videoMapper.getPendingVideoUrlByUserId(userId);
         if (videoUrl == null) {
@@ -312,6 +324,12 @@ public class VideosServiceImpl implements VideosService {
         video.setLikeCount(0);
         video.setCommentCount(0);
         video.setFavoriteCount(0);
+        video.setCreatedAt(LocalDateTime.now());
+        video.setUpdatedAt(LocalDateTime.now());
+        User userById = userMapper.getUserById(userId);
+        // 设置用户名和头像
+        video.setUserName(userById.getUserName());
+        video.setAvatarUrl(userById.getAvatarUrl());
         videoMapper.insertVideo(video);
         // 向video_tags表插入数据
         if (videoUploadInfoDTO.getTags() != null) {
@@ -325,7 +343,17 @@ public class VideosServiceImpl implements VideosService {
                 );
             }
         }
-
+        videoDocument videoDocument = new videoDocument(video, videoUploadInfoDTO.getTags());
+        // 向搜索引擎写入文档
+      /*  ElasticsearchUtil.insertDocument(
+                ElasticsearchUtil.VIDEOS_INDEX,
+                video.getId().toString(),
+                videoDocument
+        );*/
+        // 发送消息给RabbitMQ,同步数据给搜索引擎
+        TransactionCallbackUtil.runAfterCommit(() -> {
+            rabbitTemplate.convertAndSend(RabbitConfig.ES_UPDATE_QUEUE, videoDocument);
+        });
         // 删除待上传视频表中的记录
         videoMapper.delPendingVideoByUserId(userId);
     }
@@ -348,6 +376,10 @@ public class VideosServiceImpl implements VideosService {
         } else {
             // 删除视频信息
             videoMapper.delVideoByVideoId(videoId);
+            // 发送消息给RabbitMQ,同步数据给搜索引擎
+            TransactionCallbackUtil.runAfterCommit(() -> {
+                rabbitTemplate.convertAndSend(RabbitConfig.ES_DELETE_QUEUE, video.getId().toString());
+            });
         }
     }
 }

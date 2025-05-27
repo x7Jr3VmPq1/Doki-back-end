@@ -54,4 +54,23 @@ public class videoDocument {
         this.createdAt = video.getCreatedAt();
     }
 
+    public videoDocument(Video video, String[] tags) {
+        this.id = video.getId();
+        this.title = video.getTitle();
+        this.description = video.getDescription();
+        this.category = video.getCategory();
+        this.avatarUrl = video.getAvatarUrl();
+        this.thumbnailUrl = video.getThumbnailUrl();
+        this.videoUrl = video.getVideoUrl();
+        this.userId = video.getUserId();
+        this.userName = video.getUserName();
+        this.duration = video.getDuration();
+        this.views = video.getViews();
+        this.likeCount = video.getLikeCount();
+        this.favoriteCount = video.getFavoriteCount();
+        this.commentCount = video.getCommentCount();
+        this.tags = List.of(tags);
+        this.createdAt = video.getCreatedAt();
+        this.updatedAt = video.getUpdatedAt();
+    }
 }

@@ -89,7 +89,7 @@ public interface VideosService {
      * @param videoUploadInfoDTO
      * @param userId
      */
-    void publishVideo(VideoUploadInfoDTO videoUploadInfoDTO, Integer userId);
+    void publishVideo(VideoUploadInfoDTO videoUploadInfoDTO, Integer userId) throws IOException;
 
     /**
      * 删除视频
