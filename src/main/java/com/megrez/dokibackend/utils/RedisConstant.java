@@ -9,5 +9,5 @@ public class RedisConstant {
     public static final String LIKE_KEY = "likes";
     public static final String COLLECT_KEY = "collects";
     public static final String COMMENT_KEY = "comments:";
-
+    public static final String SEARCH_COUNT_KEY = "search:count:";
 }

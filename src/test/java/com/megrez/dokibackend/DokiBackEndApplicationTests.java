@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.megrez.dokibackend.config.RabbitConfig;
 import com.megrez.dokibackend.entity.Video;
 import com.megrez.dokibackend.service.VideosService;
+import com.megrez.dokibackend.task.SearchStatsMergeTask;
 import com.megrez.dokibackend.utils.ElasticsearchUtil;
 import com.megrez.dokibackend.utils.JWTUtil;
 import com.megrez.dokibackend.utils.RedisConstant;
@@ -33,14 +34,12 @@ class DokiBackEndApplicationTests {
     @Autowired
     private VideosService videosService;
 
+    @Autowired
+    SearchStatsMergeTask searchStatsMergeTask;
+
     @Test
     void contextLoads() throws IOException {
-
-        List<VideoVO> allVideos = videosService.getAllVideos(10014);
-        for (VideoVO video : allVideos) {
-            videoDocument videoDocument = new videoDocument(video);
-            ElasticsearchUtil.insertDocument(ElasticsearchUtil.VIDEOS_INDEX, video.getId().toString(), videoDocument);
-        }
+        searchStatsMergeTask.mergeRedisSearchStatsToDb();
     }
 
     @Test

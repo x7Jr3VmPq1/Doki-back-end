@@ -93,48 +93,6 @@ public class VideosServiceImpl implements VideosService {
         return videoVOList;
     }
 
-    /**
-     * 根据关键字搜索视频。
-     *
-     * @param keyword 关键字
-     * @param userId  用户ID
-     * @return
-     */
-    @Override
-    public List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) throws IOException {
-        // 使用搜索引擎进行搜索
-        List<Map<String, Object>> result = ElasticsearchUtil.searchDocumentWithHighlight(ElasticsearchUtil.VIDEOS_INDEX, keyword);
-        // 转换为  VideoVO 对象
-        List<VideoVO> videoVOList = new ArrayList<>();
-        for (Map<String, Object> document : result) {
-            videoDocument videoDocument = ElasticsearchUtil.objectMapper.convertValue(document, videoDocument.class);
-            VideoVO videoVO = new VideoVO();
-            BeanUtils.copyProperties(videoDocument, videoVO);
-            // 如果用户不为空，则根据用户ID和视频ID查询点赞和收藏信息
-            if (userId != null) {
-                videoVO.setLiked(videosInfoMapper.isLikeRecordExist(userId, videoVO.getId()));
-                videoVO.setFavorited(videosInfoMapper.isCollectRecordExist(userId, videoVO.getId()));
-            }
-            videoVOList.add(videoVO);
-        }
-       /* // 下面的方法暂时不需要 ...
-        // 遍历从数据库中获取的所有视频信息，并将其转换为 VideoVO 对象
-        for (Video video : videosInfoMapper.searchVideosByKeyword(keyword)) {
-            // 获取视频标签
-            VideoVO videoVO = new VideoVO();
-            List<String> tags = videoMapper.getVideoTagsByVideoId(video.getId());
-            videoVO.setTags(tags);
-            // 如果用户ID不为空，则根据用户ID和视频ID查询点赞和收藏信息
-            if (userId != null) {
-                videoVO.setLiked(videosInfoMapper.isLikeRecordExist(userId, video.getId()));
-                videoVO.setFavorited(videosInfoMapper.isCollectRecordExist(userId, video.getId()));
-            }
-            // 使用 BeanUtils 将 Video 对象的属性复制到 VideoVO 对象中
-            BeanUtils.copyProperties(video, videoVO);
-            videoVOList.add(videoVO);
-        }*/
-        return videoVOList;
-    }
 
     /**
      * 通用接口，根据传入的方法查询视频

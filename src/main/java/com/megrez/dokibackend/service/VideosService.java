@@ -22,14 +22,6 @@ public interface VideosService {
      */
     List<VideoVO> getAllVideos(Integer userId);
 
-    /**
-     * 根据关键字搜索视频
-     *
-     * @param keyword
-     * @param userId
-     * @return
-     */
-    List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) throws IOException;
 
     /**
      * 获取用户发布的视频

@@ -6,6 +6,7 @@ import com.megrez.dokibackend.dto.SingleCommentDTO;
 import com.megrez.dokibackend.dto.VideoDTO;
 import com.megrez.dokibackend.dto.VideoUploadInfoDTO;
 import com.megrez.dokibackend.exception.DuplicateLikeException;
+import com.megrez.dokibackend.service.SearchService;
 import com.megrez.dokibackend.vo.VideoVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +22,11 @@ import java.util.List;
 public class VideosController {
     private static final Logger log = LoggerFactory.getLogger(VideosController.class);
     public final VideosService videosService;
+    private final SearchService searchService;
 
-    public VideosController(VideosService videosService) {
+    public VideosController(VideosService videosService, SearchService searchService) {
         this.videosService = videosService;
+        this.searchService = searchService;
     }
 
     /**
@@ -53,7 +56,7 @@ public class VideosController {
         log.info("searchVideosByKeyword: userId={},keyword={}", userId, keyword);
         List<VideoVO> videoDTOList = null;
         try {
-            videoDTOList = videosService.searchVideosByKeyword(keyword, userId);
+            videoDTOList = searchService.searchVideosByKeyword(keyword, userId);
         } catch (IOException e) {
             return Result.error("搜索失败");
         }
