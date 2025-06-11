@@ -39,12 +39,15 @@ public class CommentController {
      * @return 返回一个包含该视频所有评论的列表，每个评论以CommentVO对象表示。
      */
     @GetMapping("/video/comments/{videoId}")
-    public Result<List<CommentVO>> getCommentsByVideoId(@PathVariable Integer videoId, HttpServletRequest request) {
+    public Result<List<CommentVO>> getCommentsByVideoId(
+            @PathVariable Integer videoId,
+            @RequestParam(defaultValue = "0") Integer cursor,
+            HttpServletRequest request) {
         // 从请求头中的token解析出用户id
         Integer userId = (Integer) request.getAttribute("userId");
         log.info("getCommentsByVideoId: videoId={}, userId={}", videoId, userId);
         // 调用服务层方法获取该视频的所有评论
-        List<CommentVO> comments = commentService.getCommentsByVideoId(videoId, userId);
+        List<CommentVO> comments = commentService.getCommentsByVideoId(videoId, userId, cursor);
         return Result.success(comments);
     }
 
@@ -55,10 +58,10 @@ public class CommentController {
      * @return 返回一个包含成功消息的Result对象。
      */
     @PostMapping("/video/comments/add")
-    public Result<String> addComment(@RequestBody @Valid SingleCommentDTO comment) {
+    public Result<SingleCommentDTO> addComment(@RequestBody @Valid SingleCommentDTO comment) {
         log.info("addComment: comment={}", comment);
-        commentService.addComment(comment);
-        return Result.success("评论成功");
+        SingleCommentDTO singleCommentDTO = commentService.addComment(comment);
+        return Result.success(singleCommentDTO);
     }
 
     /**

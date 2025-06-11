@@ -10,20 +10,25 @@
     <!--  根据视频ID获取一级评论列表  -->
     <select id="getCommentsByVideoId" resultType="com.megrez.dokibackend.dto.CommentsDTO">
         SELECT c.id,
-               c.user_id,
-               u.username,
-               u.avatar_url,
-               c.content,
-               c.parent_comment_id,
-               c.like_count,
-               c.dislike_count,
-               c.created_at
+        c.user_id,
+        u.username,
+        u.avatar_url,
+        c.content,
+        c.parent_comment_id,
+        c.like_count,
+        c.dislike_count,
+        c.created_at,
+        c.img_url
         FROM comments c
-                 JOIN users u ON c.user_id = u.id
+        JOIN users u ON c.user_id = u.id
         WHERE c.video_id = #{videoId}
-          AND c.parent_comment_id IS NULL
-        ORDER BY c.created_at DESC
+        <if test="cursor != null">
+            AND c.id &gt; #{cursor}
+        </if>
+        AND c.parent_comment_id IS NULL
+        LIMIT 10
     </select>
+
     <!--  根据父级评论ID获取二级评论列表  -->
     <select id="getSecondLevelComments" resultType="com.megrez.dokibackend.dto.CommentsDTO">
         SELECT c.id,
@@ -33,16 +38,17 @@
                c.content,
                c.parent_comment_id,
                c.like_count,
-               c.created_at
+               c.created_at,
+               c.img_url
         FROM comments c
                  JOIN users u ON c.user_id = u.id
         WHERE c.parent_comment_id = #{parentCommentId}
         ORDER BY c.created_at
     </select>
     <!--  添加评论记录  -->
-    <insert id="addComment" parameterType="com.megrez.dokibackend.dto.SingleCommentDTO">
-        INSERT INTO comments (video_id, user_id, content, parent_comment_id)
-        VALUES (#{videoId}, #{userId}, #{content}, #{parentCommentId})
+    <insert id="addComment" parameterType="com.megrez.dokibackend.dto.SingleCommentDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comments (video_id, user_id, content, parent_comment_id, img_url)
+        VALUES (#{videoId}, #{userId}, #{content}, #{parentCommentId}, #{imgUrl})
     </insert>
     <!--  更改评论的点赞数量( +1 或 -1 )  -->
     <update id="updateCommentLikeCount">
@@ -90,6 +96,24 @@
                       FROM comment_likes
                       WHERE user_id = #{userId}
                         AND comment_id = #{commentId})
+    </select>
+    <select id="getCommentsAfterCursor" resultType="com.megrez.dokibackend.dto.CommentsDTO">
+        SELECT c.id,
+               c.user_id,
+               u.username,
+               u.avatar_url,
+               c.content,
+               c.parent_comment_id,
+               c.like_count,
+               c.dislike_count,
+               c.created_at,
+               c.img_url
+        FROM comments c
+                 JOIN users u ON c.user_id = u.id
+        WHERE c.video_id = #{videoId}
+          AND c.id > #{cursor}
+          AND c.parent_comment_id IS NULL
+        LIMIT 10
     </select>
     <!-- 新增一条点赞记录   -->
     <insert id="addLikeRecord">

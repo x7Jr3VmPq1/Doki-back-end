@@ -16,7 +16,7 @@ public interface CommentService {
      *
      * @param comment 包含评论信息的 SingleCommentDTO 对象
      */
-    void addComment(SingleCommentDTO comment);
+    SingleCommentDTO addComment(SingleCommentDTO comment);
 
     /**
      * 更新指定评论的点赞数。
@@ -56,7 +56,7 @@ public interface CommentService {
      * @param videoId 视频的唯一标识符
      * @return 返回包含该视频所有评论的 CommentVO 列表
      */
-    List<CommentVO> getCommentsByVideoId(Integer videoId, Integer userId);
+    List<CommentVO> getCommentsByVideoId(Integer videoId, Integer userId, Integer cursor);
 
     /**
      * 根据父评论的唯一标识符获取所有二级评论。

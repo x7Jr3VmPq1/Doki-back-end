@@ -15,4 +15,6 @@ public class VideoUploadInfoDTO {
     private String category;
     // 视频标签数组
     private String[] tags;
+    // 封面图
+    private String cover;
 }

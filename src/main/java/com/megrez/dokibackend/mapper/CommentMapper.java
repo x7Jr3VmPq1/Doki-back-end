@@ -26,9 +26,10 @@ public interface CommentMapper {
      * 根据视频ID获取评论列表。
      *
      * @param videoId 视频的唯一标识符。
+     * @param cursor  游标，用于分页查询
      * @return 返回指定视频的评论列表。
      */
-    List<CommentsDTO> getCommentsByVideoId(@Param("videoId") int videoId);
+    List<CommentsDTO> getCommentsByVideoId(@Param("videoId") int videoId, @Param("cursor") int cursor);
 
     /**
      * 根据父评论ID获取二级评论列表。

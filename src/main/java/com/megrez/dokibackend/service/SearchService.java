@@ -15,4 +15,10 @@ public interface SearchService {
      */
     List<VideoVO> searchVideosByKeyword(String keyword, Integer userId) throws IOException;
 
+    /**
+     * 获取热门搜索
+     *
+     * @return
+     */
+    List<String> getHotSearch();
 }

@@ -1,5 +1,7 @@
 package com.megrez.dokibackend.service.impl;
 
+import com.megrez.dokibackend.common.FileServerURL;
+import com.megrez.dokibackend.common.LocalFilesPath;
 import com.megrez.dokibackend.common.NotificationType;
 import com.megrez.dokibackend.controller.WebSocketController;
 import com.megrez.dokibackend.dto.CommentsDTO;
@@ -17,35 +19,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Base64Utils;
+import org.springframework.util.StringUtils;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CommentServiceImpl implements CommentService {
     private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
     private final CommentMapper commentMapper;
-    private final NotificationService notificationService;
-    private final UserMapper userMapper;
-    private final VideoMapper videoMapper;
-
     private final ApplicationEventPublisher eventPublisher;
 
     public CommentServiceImpl(CommentMapper commentMapper,
-                              UserMapper userMapper,
-                              VideoMapper videoMapper,
-                              NotificationService notificationService,
                               ApplicationEventPublisher eventPublisher) {
         this.commentMapper = commentMapper;
-        this.notificationService = notificationService;
-        this.userMapper = userMapper;
-        this.videoMapper = videoMapper;
         this.eventPublisher = eventPublisher;
     }
+
 
     /**
      * 添加评论
@@ -53,7 +55,39 @@ public class CommentServiceImpl implements CommentService {
      * @param comment 包含评论信息的 SingleCommentDTO 对象
      */
     @Override
-    public void addComment(SingleCommentDTO comment) {
+    public SingleCommentDTO addComment(SingleCommentDTO comment) {
+        // 判断有无图片，有图片，把图片传到文件服务器上
+        String imageBASE64 = comment.getImgUrl();
+        if (StringUtils.hasText(imageBASE64)) {
+            try {
+                // 解析 Base64 字符串，去掉头部的 `data:image/jpeg;base64,` 部分
+                String base64Data = imageBASE64.split(",")[1];
+
+                // 将 Base64 字符串解码为字节数组
+                byte[] imgBytes = Base64Utils.decodeFromString(base64Data);
+
+                // 生成唯一的文件名
+                String fileName = UUID.randomUUID().toString() + ".jpg";
+
+                // 确保目录存在
+                Path directory = Paths.get(LocalFilesPath.commentImageUploadPath);
+                if (!Files.exists(directory)) {
+                    Files.createDirectories(directory);
+                }
+                // 保存图片到本地文件系统
+                Path filePath = directory.resolve(fileName);
+                try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                    fos.write(imgBytes);
+                }
+                // 设置评论图片的 URL
+                String imgUrl = FileServerURL.commentImageFilesPath + fileName;
+                comment.setImgUrl(imgUrl);
+
+            } catch (IOException e) {
+                throw new RuntimeException("图片上传失败", e);
+            }
+        }
+
         commentMapper.addComment(comment);
         // 发布评论事件
         eventPublisher.publishEvent(new Payload(
@@ -64,6 +98,8 @@ public class CommentServiceImpl implements CommentService {
                 comment.getParentCommentId() == null ? null : comment.getParentCommentId(),
                 comment.getVideoId()
         ));
+        // 返回添加的评论
+        return comment;
     }
 
     /**
@@ -106,9 +142,9 @@ public class CommentServiceImpl implements CommentService {
      * @return
      */
     @Override
-    public List<CommentVO> getCommentsByVideoId(Integer videoId, Integer userId) {
+    public List<CommentVO> getCommentsByVideoId(Integer videoId, Integer userId, Integer cursor) {
         // 根据视频的ID获取评论
-        List<CommentsDTO> comments = commentMapper.getCommentsByVideoId(videoId);
+        List<CommentsDTO> comments = commentMapper.getCommentsByVideoId(videoId, cursor);
         // 遍历评论列表，将评论转换为 CommentVO 对象，并添加到结果列表中
         List<CommentVO> commentVOList = new ArrayList<>();
         comments.forEach(commentsDTO -> {

@@ -59,4 +59,8 @@ public class CommentsDTO {
      * 该评论的回复评论列表。如果该评论没有回复，则此列表为空。
      */
     private List<CommentsDTO> replies;
+    /**
+     * 评论的图片
+     */
+    private String imgUrl;
 }

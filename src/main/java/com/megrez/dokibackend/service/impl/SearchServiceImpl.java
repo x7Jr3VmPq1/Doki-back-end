@@ -1,5 +1,6 @@
 package com.megrez.dokibackend.service.impl;
 
+import com.megrez.dokibackend.mapper.SearchMapper;
 import com.megrez.dokibackend.mapper.VideoMapper;
 import com.megrez.dokibackend.mapper.VideosInfoMapper;
 import com.megrez.dokibackend.service.SearchService;
@@ -20,10 +21,12 @@ public class SearchServiceImpl implements SearchService {
 
     private final VideosInfoMapper videosInfoMapper;
     private final RedisUtil redisUtil;
+    private final SearchMapper searchMapper;
 
-    public SearchServiceImpl(VideosInfoMapper videosInfoMapper, RedisUtil redisUtil) {
+    public SearchServiceImpl(VideosInfoMapper videosInfoMapper, RedisUtil redisUtil, SearchMapper searchMapper) {
         this.videosInfoMapper = videosInfoMapper;
         this.redisUtil = redisUtil;
+        this.searchMapper = searchMapper;
     }
 
     /**
@@ -69,6 +72,11 @@ public class SearchServiceImpl implements SearchService {
             videoVOList.add(videoVO);
         }*/
         return videoVOList;
+    }
+
+    @Override
+    public List<String> getHotSearch() {
+        return searchMapper.getHotSearch();
     }
 
 }

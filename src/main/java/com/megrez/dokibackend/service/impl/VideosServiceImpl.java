@@ -17,9 +17,7 @@ import com.megrez.dokibackend.mapper.UserMapper;
 import com.megrez.dokibackend.mapper.VideoMapper;
 import com.megrez.dokibackend.mapper.VideosInfoMapper;
 import com.megrez.dokibackend.service.VideosService;
-import com.megrez.dokibackend.utils.ElasticsearchUtil;
-import com.megrez.dokibackend.utils.TransactionCallbackUtil;
-import com.megrez.dokibackend.utils.videoDocument;
+import com.megrez.dokibackend.utils.*;
 import com.megrez.dokibackend.vo.VideoVO;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
@@ -35,10 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -46,9 +41,6 @@ import java.util.function.Supplier;
  */
 @Service
 public class VideosServiceImpl implements VideosService {
-    // 视频上传路径
-    @Value("${videoUploadPath.path}")
-    private String videoUploadPath;
 
     private final VideosInfoMapper videosInfoMapper;
     private final VideoMapper videoMapper;
@@ -224,31 +216,20 @@ public class VideosServiceImpl implements VideosService {
         if (video.isEmpty()) {
             return false; // 文件为空，上传失败
         }
-
         try {
-            // 创建上传目录（如果不存在）
-            File uploadDir = new File(videoUploadPath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdirs();
-            }
-
-            // 生成唯一文件名
-            String originalFilename = video.getOriginalFilename();
-            String fileExtension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
-            String uniqueFileName = UUID.randomUUID() + fileExtension;
-
             // 保存文件
-            Path filePath = Paths.get(videoUploadPath, uniqueFileName);
-            Files.copy(video.getInputStream(), filePath);
-
-            // 先判断是不是已经存在一条待审核的视频,向videoMapper查询视频URL
-            // 如果存在，删除这条记录，并把文件服务器中对应的视频删除
-            if (videoMapper.getPendingVideoUrlByUserId(userId) != null) {
-                String url = videoMapper.getPendingVideoUrlByUserId(userId);
-                videoMapper.delPendingVideoByUserId(userId);
-                Files.deleteIfExists(Paths.get(videoUploadPath, url.substring(url.lastIndexOf("/") + 1)));
+            String videoURL = FileUtils.saveVideo(video);
+            if (videoURL == null) {
+                return false;
             }
-            videoMapper.addPendingVideo(userId, FileServerURL.videoFilesPath + uniqueFileName, 0);
+            // 先判断是不是已经存在一条待审核的视频,向videoMapper查询视频URL
+            String url = videoMapper.getPendingVideoUrlByUserId(userId);
+            if (url != null) {
+                // 如果存在，删除这条记录，并把文件服务器中对应的视频删除
+                videoMapper.delPendingVideoByUserId(userId);
+                FileUtils.deleteVideo(url);
+            }
+            videoMapper.addPendingVideo(userId, videoURL, 0);
             return true; // 上传成功
         } catch (IOException e) {
             throw new RuntimeException("上传文件失败", e);
@@ -265,19 +246,28 @@ public class VideosServiceImpl implements VideosService {
     @Transactional
     public void publishVideo(VideoUploadInfoDTO videoUploadInfoDTO, Integer userId) throws IOException {
         // 从待上传视频表中获取视频URL
-        String videoUrl = videoMapper.getPendingVideoUrlByUserId(userId);
-        if (videoUrl == null) {
+        String folderName = videoMapper.getPendingVideoUrlByUserId(userId);
+        if (folderName == null) {
             throw new RuntimeException("没有找到待发布的视频");
         }
-
+        // 保存封面图
+        String cover;
+        if (!Objects.equals(videoUploadInfoDTO.getCover(), "")) {
+            // 如果用户上传了封面图，则保存封面图
+            cover = FileUtils.saveCover(videoUploadInfoDTO.getCover(), folderName);
+        } else {
+            // 如果用户没有上传封面图，则使用FFmpeg生成封面图
+            cover = FFmpegUtils.createThumbnail(folderName);
+        }
         // 向videos表插入数据
         Video video = new Video();
         video.setUserId(userId);
         video.setTitle(videoUploadInfoDTO.getVideoTitle());
         video.setDescription(videoUploadInfoDTO.getVideoDesc());
-        video.setVideoUrl(videoUrl);
+        video.setVideoUrl(FileServerURL.videoFilesPath + folderName + "/video.mp4");
+        video.setThumbnailUrl(cover);
         video.setCategory(videoUploadInfoDTO.getCategory());
-        video.setDuration(0);
+        video.setDuration(FFmpegUtils.getVideoDuration(folderName));
         video.setViews(0);
         video.setLikeCount(0);
         video.setCommentCount(0);
@@ -302,12 +292,7 @@ public class VideosServiceImpl implements VideosService {
             }
         }
         videoDocument videoDocument = new videoDocument(video, videoUploadInfoDTO.getTags());
-        // 向搜索引擎写入文档
-      /*  ElasticsearchUtil.insertDocument(
-                ElasticsearchUtil.VIDEOS_INDEX,
-                video.getId().toString(),
-                videoDocument
-        );*/
+
         // 发送消息给RabbitMQ,同步数据给搜索引擎
         TransactionCallbackUtil.runAfterCommit(() -> {
             rabbitTemplate.convertAndSend(RabbitConfig.ES_UPDATE_QUEUE, videoDocument);

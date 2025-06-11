@@ -4,6 +4,8 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface SearchMapper {
     /**
@@ -14,4 +16,11 @@ public interface SearchMapper {
      */
     void recordSearch(@Param("keyword") String keyword,
                       @Param("count") long count);
+
+    /**
+     * 获取热门搜索(top10)
+     *
+     * @return 热门搜索列表
+     */
+    List<String> getHotSearch();
 }

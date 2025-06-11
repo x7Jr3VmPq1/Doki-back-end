@@ -1,6 +1,7 @@
 package com.megrez.dokibackend.service.impl;
 
 import com.megrez.dokibackend.common.FileServerURL;
+import com.megrez.dokibackend.common.LocalFilesPath;
 import com.megrez.dokibackend.dto.UserLoginDTO;
 import com.megrez.dokibackend.dto.UserRegisterDTO;
 import com.megrez.dokibackend.entity.User;
@@ -33,9 +34,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final VideosService videosService;
-    // 上传头像路径
-    @Value("${avatarUploadPath.path}")
-    String avatarUploadPath;
+
 
     public UserServiceImpl(UserMapper userMapper, VideosService videosService) {
         this.userMapper = userMapper;
@@ -228,20 +227,20 @@ public class UserServiceImpl implements UserService {
                 String fileName = UUID.randomUUID().toString() + ".jpg";
 
                 // 确保目录存在
-                Path directory = Paths.get(avatarUploadPath);
-                if (!Files.exists(directory)) {
-                    Files.createDirectories(directory);
+                Path path = Paths.get(LocalFilesPath.avatarUploadPath);
+
+                if (!Files.exists(path)) {
+                    Files.createDirectories(path);
                 }
                 // 删除用户之前存储的头像
                 if (user.getAvatarUrl() != null) {
-                    Path oldFilePath =
-                            Paths.get(avatarUploadPath).
-                                    resolve(user.getAvatarUrl().
-                                            substring(user.getAvatarUrl().lastIndexOf("/") + 1));
+                    Path oldFilePath = path.
+                            resolve(user.getAvatarUrl().
+                                    substring(user.getAvatarUrl().lastIndexOf("/") + 1));
                     Files.deleteIfExists(oldFilePath);
                 }
                 // 保存头像到本地文件系统
-                Path filePath = directory.resolve(fileName);
+                Path filePath = path.resolve(fileName);
                 try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
                     fos.write(avatarBytes);
                 }

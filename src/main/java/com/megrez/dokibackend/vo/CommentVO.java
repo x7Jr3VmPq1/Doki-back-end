@@ -24,6 +24,8 @@ public class CommentVO {
     private Integer likeCount;
     // 创建时间
     private LocalDateTime createdAt;
+    // 评论图片
+    private String imgUrl;
     // 二级评论集合
     private List<CommentVO> replies;
     // 是否点赞

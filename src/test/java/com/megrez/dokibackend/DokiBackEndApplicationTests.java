@@ -2,14 +2,12 @@ package com.megrez.dokibackend;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.megrez.dokibackend.common.FileServerURL;
 import com.megrez.dokibackend.config.RabbitConfig;
 import com.megrez.dokibackend.entity.Video;
 import com.megrez.dokibackend.service.VideosService;
 import com.megrez.dokibackend.task.SearchStatsMergeTask;
-import com.megrez.dokibackend.utils.ElasticsearchUtil;
-import com.megrez.dokibackend.utils.JWTUtil;
-import com.megrez.dokibackend.utils.RedisConstant;
-import com.megrez.dokibackend.utils.RedisUtil;
+import com.megrez.dokibackend.utils.*;
 import com.megrez.dokibackend.vo.VideoVO;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -99,4 +97,9 @@ class DokiBackEndApplicationTests {
         redisUtil.set(RedisConstant.VIDEO_KEY + "2:" + RedisConstant.COLLECT_KEY, "21");
     }
 
+    @Test
+    void testFileMove() throws IOException {
+        int videoDuration = FFmpegUtils.getVideoDuration("db3a8f8c-6a4f-4573-8c5d-f79f28beee22");
+        System.out.println(videoDuration);
+    }
 }
