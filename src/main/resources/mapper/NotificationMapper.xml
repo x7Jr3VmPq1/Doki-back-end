@@ -10,23 +10,29 @@
     <!--  根据用户ID获取对应类型的通知  -->
     <select id="getNotificationsByUserIdAndType" resultType="com.megrez.dokibackend.vo.NotificationVO">
         SELECT n.id,
-               n.user_id,
-               n.type,
-               n.message,
-               n.is_read,
-               n.created_at,
-               u.avatar_url,
-               u.username AS operator_name,
-               v.id       AS video_id,
-               v.title    AS video_title,
-               c.id       AS comment_id,
-               c.content  AS comment_content
+        n.user_id,
+        n.type,
+        n.message,
+        n.is_read,
+        n.created_at,
+        u.avatar_url,
+        u.username AS operator_name,
+        u.id AS operator_id,
+        v.id AS video_id,
+        v.title AS video_title,
+        v.thumbnail_url AS videoThumbnail,
+        c.id AS comment_id,
+        c.content AS comment_content
         FROM notifications n
-                 LEFT JOIN users u ON n.operator_id = u.id
-                 LEFT JOIN videos v ON n.video_id = v.id
-                 LEFT JOIN comments c ON n.comment_id = c.id
-        WHERE n.type = #{type}
-          AND n.user_id = #{userId}
+        LEFT JOIN users u ON n.operator_id = u.id
+        LEFT JOIN videos v ON n.video_id = v.id
+        LEFT JOIN comments c ON n.comment_id = c.id
+        WHERE n.user_id = #{userId}
+        <if test="type != null and type != ''">
+            AND n.type = #{type} AND
+        </if>
+        AND n.type != 'DIRECT_MESSAGE'
         ORDER BY n.created_at DESC
+        LIMIT 5
     </select>
 </mapper>

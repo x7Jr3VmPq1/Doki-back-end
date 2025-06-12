@@ -38,6 +38,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<NotificationVO> getNotificationByUserIdAndType(Integer userId, String type) {
         // 判断typed的合法性，不合法抛出异常
+        if ("all".equals(type)) {
+            return notificationMapper.getNotificationsByUserIdAndType(userId, null);
+        }
         try {
             NotificationType.valueOf(type.toUpperCase());
             return notificationMapper.getNotificationsByUserIdAndType(userId, type);

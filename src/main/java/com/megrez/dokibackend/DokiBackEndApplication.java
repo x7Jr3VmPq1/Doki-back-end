@@ -10,5 +10,4 @@ public class DokiBackEndApplication {
     public static void main(String[] args) {
         SpringApplication.run(DokiBackEndApplication.class, args);
     }
-
 }
