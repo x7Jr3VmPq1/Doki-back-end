@@ -12,6 +12,7 @@
                FROM conversations
                WHERE conversations.id = #{conversationId}
                  AND conversations.user_id = #{userId})
+        ORDER BY m.sent_at
     </select>
 
     <!-- 根据用户ID获取会话列表 -->
@@ -28,7 +29,7 @@
     </insert>
 
     <!--  插入一条消息记录  -->
-    <insert id="insertMessage" parameterType="com.megrez.dokibackend.entity.Message">
+    <insert id="insertMessage" parameterType="com.megrez.dokibackend.entity.Message" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO messages (sender_id, message, attachment_url, sent_at, is_read,
                               is_revoked, reply_to_id, conversation_id)
         VALUES (#{senderId}, #{message}, #{attachmentUrl}, #{sentAt}, #{isRead},
@@ -49,7 +50,7 @@
     <select id="getUserInfoByConversationId" resultType="com.megrez.dokibackend.entity.User">
         SELECT *
         FROM users
-        WHERE id in (SELECT DISTINCT user_id FROM conversations WHERE id = #{conversationId});
+        WHERE id = (SELECT DISTINCT user_id FROM conversations WHERE id = #{conversationId} AND user_id != #{userId});
     </select>
 
     <!--  根据会话ID和用户ID标记所有消息为已读  -->
@@ -58,5 +59,12 @@
         SET is_read = true
         WHERE conversation_id = #{conversationId}
           AND sender_id != #{userId}
+    </update>
+    <!-- 更新会话记录，添加最新的消息内容和更新时间  -->
+    <update id="updateConversation">
+        UPDATE conversations
+        SET last_message_content = #{lastMessageContent},
+            last_message_at      = #{lastMessageAt}
+        WHERE id = #{id}
     </update>
 </mapper>

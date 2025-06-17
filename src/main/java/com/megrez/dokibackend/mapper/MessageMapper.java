@@ -3,9 +3,11 @@ package com.megrez.dokibackend.mapper;
 import com.megrez.dokibackend.entity.Conversation;
 import com.megrez.dokibackend.entity.Message;
 import com.megrez.dokibackend.entity.User;
+import com.megrez.dokibackend.vo.ConversationVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -55,18 +57,29 @@ public interface MessageMapper {
     /**
      * 根据会话id获取用户信息
      *
-     * @param conversationId
-     * @return
+     * @param conversationId 会话id
+     * @param userId         当前用户id
+     * @return 用户信息
      */
-    List<User> getUserInfoByConversationId(String conversationId);
+    User getUserInfoByConversationId(@Param("conversationId") String conversationId,
+                                           @Param("userId") Integer userId);
 
     /**
      * 标记所有消息为已读
      *
      * @param conversationId // 会话id
-     * @param userId // 用户id
-     *
+     * @param userId         // 用户id
      */
-    void markAllMessagesAsRead(@Param("conversationId") String conversationId,@Param("userId") Integer userId);
+    void markAllMessagesAsRead(@Param("conversationId") String conversationId, @Param("userId") Integer userId);
 
+    /**
+     * 更新会话信息
+     *
+     * @param conversationId // 会话id
+     * @param message        // 最新消息
+     * @param sentAt         // 最新消息发送时间
+     */
+    void updateConversation(@Param("id") String conversationId,
+                            @Param("lastMessageContent") String message,
+                            @Param("lastMessageAt") LocalDateTime sentAt);
 }

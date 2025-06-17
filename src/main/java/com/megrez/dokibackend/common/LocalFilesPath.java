@@ -13,4 +13,6 @@ public class LocalFilesPath {
     public static final String commentImageUploadPath = fileLocalPath + "comment_imgs/";
     // 视频文件夹路径
     public static final String videoFilesPathLocal = fileLocalPath + "videos/";
+    // 私聊图片文件夹路径
+    public static final String privateChatImageUploadPath = fileLocalPath + "private_message_imgs/";
 }

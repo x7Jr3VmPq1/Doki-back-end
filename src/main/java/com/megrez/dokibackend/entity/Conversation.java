@@ -23,4 +23,8 @@ public class Conversation {
     private LocalDateTime userJoinedAt;
     // 会话创建时间
     private LocalDateTime createdAt;
+    // 最后一条消息的内容
+    private String lastMessageContent;
+    // 最后一条消息的时间
+    private LocalDateTime lastMessageAt;
 }

@@ -29,7 +29,7 @@
         LEFT JOIN comments c ON n.comment_id = c.id
         WHERE n.user_id = #{userId}
         <if test="type != null and type != ''">
-            AND n.type = #{type} AND
+            AND n.type = #{type}
         </if>
         AND n.type != 'DIRECT_MESSAGE'
         ORDER BY n.created_at DESC

@@ -158,4 +158,37 @@ public class FileUtils {
         Path target = Paths.get(targetStr);
         Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
     }
+
+    // 存储私聊发送的图片
+    public static String savePrivateChatImage(String imageBASE64) throws IOException {
+        String imgUrl;
+        try {
+            // 解析 Base64 字符串，去掉头部的 `data:image/jpeg;base64,` 部分
+            String base64Data = imageBASE64.split(",")[1];
+
+            // 将 Base64 字符串解码为字节数组
+            byte[] imgBytes = Base64Utils.decodeFromString(base64Data);
+
+            // 生成唯一的文件名
+            String fileName = UUID.randomUUID().toString() + ".jpg";
+
+            // 确保目录存在
+            Path directory = Paths.get(LocalFilesPath.privateChatImageUploadPath);
+            if (!Files.exists(directory)) {
+                Files.createDirectories(directory);
+            }
+            // 保存图片到本地文件系统
+            Path filePath = directory.resolve(fileName);
+            try (FileOutputStream fos = new FileOutputStream(filePath.toFile())) {
+                fos.write(imgBytes);
+            }
+            // 设置评论图片的 URL
+            imgUrl = FileServerURL.privateChatImageFilesPath + fileName;
+
+
+        } catch (IOException e) {
+            throw new RuntimeException("图片上传失败", e);
+        }
+        return imgUrl;
+    }
 }

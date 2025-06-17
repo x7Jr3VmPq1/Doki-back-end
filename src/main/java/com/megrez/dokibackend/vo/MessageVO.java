@@ -20,6 +20,6 @@ public class MessageVO {
     private Integer userId;
     // 私聊对象头像
     private String avatarUrl;
-    // 消息列表
-    private List<Message> messages;
+    // 最后一条消息
+    private String lastMessage;
 }

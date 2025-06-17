@@ -7,12 +7,16 @@ import com.megrez.dokibackend.entity.Message;
 import com.megrez.dokibackend.entity.User;
 import com.megrez.dokibackend.event.Payload;
 import com.megrez.dokibackend.mapper.MessageMapper;
+import com.megrez.dokibackend.mapper.UserMapper;
 import com.megrez.dokibackend.service.MessageService;
+import com.megrez.dokibackend.utils.FileUtils;
+import com.megrez.dokibackend.vo.ConversationVO;
 import com.megrez.dokibackend.vo.MessageVO;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -20,12 +24,42 @@ import java.util.*;
 public class MessageServiceImpl implements MessageService {
     private final MessageMapper messageMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserMapper userMapper;
 
     public MessageServiceImpl(MessageMapper messageMapper,
-                              ApplicationEventPublisher eventPublisher) {
+                              ApplicationEventPublisher eventPublisher, UserMapper userMapper) {
         this.messageMapper = messageMapper;
         this.eventPublisher = eventPublisher;
+        this.userMapper = userMapper;
     }
+
+    /**
+     * 获取会话列表
+     *
+     * @param userId // 用户id
+     */
+
+    @Override
+    public List<ConversationVO> getConversationListByUserId(Integer userId) {
+        List<ConversationVO> conversationVOS = new ArrayList<>();
+        // 先获取到会话列表
+        List<Conversation> conversationList = messageMapper.getConversationListByUserId(userId);
+        for (Conversation conversation : conversationList) {
+            // 拿到会话中用户的信息
+            User userInfoByConversationId = messageMapper.getUserInfoByConversationId(conversation.getId(), userId);
+            // 生成会话对象
+            ConversationVO conversationVO = new ConversationVO();
+            conversationVO.setConversationId(conversation.getId());
+            conversationVO.setUsername(userInfoByConversationId.getUserName());
+            conversationVO.setUserId(userInfoByConversationId.getId());
+            conversationVO.setAvatarUrl(userInfoByConversationId.getAvatarUrl());
+            conversationVO.setLastMessage(conversation.getLastMessageContent());
+            conversationVO.setLastMessageSentAt(conversation.getLastMessageAt());
+            conversationVOS.add(conversationVO);
+        }
+        return conversationVOS;
+    }
+
 
     /**
      * 根据用户id获取消息
@@ -35,7 +69,7 @@ public class MessageServiceImpl implements MessageService {
     @Override
     @Transactional
     public List<MessageVO> getMessagesByUserId(Integer userId) {
-        // 获取会话列表
+        /*// 获取会话列表
         List<Conversation> conversations = messageMapper.getConversationListByUserId(userId);
         // 遍历会话列表，获取每个会话的详细信息
         List<MessageVO> messageVOS = new ArrayList<>();
@@ -83,18 +117,20 @@ public class MessageServiceImpl implements MessageService {
                         .getSentAt()
         ).reversed());
 
-        return messageVOS;
+        return messageVOS;*/
+        return null;
     }
 
     /**
      * 发送消息
      *
      * @param directMessageDTO // 消息体
+     * @return
      */
 
     @Override
     @Transactional
-    public void sendMessage(DirectMessageDTO directMessageDTO) {
+    public Message sendMessage(DirectMessageDTO directMessageDTO) throws IOException {
         // 先查找会话ID
         String conversationId = directMessageDTO.getConversationId();
         // 如果会话ID为空，则创建一个会话
@@ -119,7 +155,18 @@ public class MessageServiceImpl implements MessageService {
         message.setAttachmentUrl(null);
         message.setReplyToId(null);
         message.setConversationId(conversationId);
+        if (directMessageDTO.getPictureBase64() != null) {
+            message.setAttachmentUrl(FileUtils.savePrivateChatImage(directMessageDTO.getPictureBase64()));
+        }
+        User userById = userMapper.getUserById(directMessageDTO.getUserId());
+        message.setSenderName(userById.getUserName());
+        message.setSenderAvatarUrl(userById.getAvatarUrl());
         messageMapper.insertMessage(message);
+        // 更新会话记录，添加最后的消息内容和发送时间
+        messageMapper.updateConversation(
+                conversationId,
+                message.getAttachmentUrl() != null ? "[图片]" + message.getMessage() : message.getMessage(),
+                message.getSentAt());
 
         // 向消息目标推送通知
         eventPublisher.publishEvent(new Payload(
@@ -130,5 +177,11 @@ public class MessageServiceImpl implements MessageService {
                 null,
                 null
         ));
+        return message;
+    }
+
+    @Override
+    public List<Message> getMessagesByConversationId(String conversationId, Integer userId) {
+        return messageMapper.getMessagesByConversationId(conversationId, userId);
     }
 }

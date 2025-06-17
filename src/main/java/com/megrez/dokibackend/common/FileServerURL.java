@@ -1,7 +1,5 @@
 package com.megrez.dokibackend.common;
 
-import java.awt.*;
-
 public class FileServerURL {
     /**
      * 文件服务器URL，默认为localhost:8081
@@ -15,4 +13,6 @@ public class FileServerURL {
     public static final String videoFilesPath = fileServerURL + "videos/";
     // 评论图片文件夹路径
     public static final String commentImageFilesPath = fileServerURL + "comment_imgs/";
+    // 私信图片文件夹路径
+    public static final String privateChatImageFilesPath = fileServerURL + "private_message_imgs/";
 }
