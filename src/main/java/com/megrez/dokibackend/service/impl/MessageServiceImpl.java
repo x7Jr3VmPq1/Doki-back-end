@@ -184,4 +184,9 @@ public class MessageServiceImpl implements MessageService {
     public List<Message> getMessagesByConversationId(String conversationId, Integer userId) {
         return messageMapper.getMessagesByConversationId(conversationId, userId);
     }
+
+    @Override
+    public void delMessages(String conversationId, Integer userId) {
+        messageMapper.delMessages(conversationId, userId);
+    }
 }

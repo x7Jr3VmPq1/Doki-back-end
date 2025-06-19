@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="com.megrez.dokibackend.mapper.MessageMapper">
+    <!-- 更新删除时间 -->
+    <update id="delMessages">
+        UPDATE conversations
+        SET last_deleted_at = now()
+        WHERE user_id = #{userId}
+          AND id = #{conversationId}
+    </update>
     <!-- 根据会话ID获取对应的消息记录 -->
     <select id="getMessagesByConversationId" resultType="com.megrez.dokibackend.entity.Message">
         SELECT *, u.avatar_url senderAvatarUrl, u.username senderName
@@ -20,6 +27,8 @@
         SELECT *
         FROM conversations
         WHERE user_id = #{userId}
+          AND (last_deleted_at IS NULL
+            OR last_deleted_at &lt; last_message_at)
     </select>
 
     <!--  创建一个新会话  -->
@@ -29,7 +38,8 @@
     </insert>
 
     <!--  插入一条消息记录  -->
-    <insert id="insertMessage" parameterType="com.megrez.dokibackend.entity.Message" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insertMessage" parameterType="com.megrez.dokibackend.entity.Message" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO messages (sender_id, message, attachment_url, sent_at, is_read,
                               is_revoked, reply_to_id, conversation_id)
         VALUES (#{senderId}, #{message}, #{attachmentUrl}, #{sentAt}, #{isRead},

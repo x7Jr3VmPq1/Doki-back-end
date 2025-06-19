@@ -41,4 +41,6 @@ public interface MessageService {
      * @return
      */
     List<Message> getMessagesByConversationId(String conversationId, Integer userId);
+
+    void delMessages(String conversationId, Integer userId);
 }

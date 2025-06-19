@@ -62,7 +62,7 @@ public interface MessageMapper {
      * @return 用户信息
      */
     User getUserInfoByConversationId(@Param("conversationId") String conversationId,
-                                           @Param("userId") Integer userId);
+                                     @Param("userId") Integer userId);
 
     /**
      * 标记所有消息为已读
@@ -82,4 +82,13 @@ public interface MessageMapper {
     void updateConversation(@Param("id") String conversationId,
                             @Param("lastMessageContent") String message,
                             @Param("lastMessageAt") LocalDateTime sentAt);
+
+    /**
+     * 删除消息记录
+     *
+     * @param conversationId // 会话id
+     * @param userId         // 用户id
+     */
+    void delMessages(@Param("conversationId") String conversationId,
+                     @Param("userId") Integer userId);
 }

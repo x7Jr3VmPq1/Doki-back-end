@@ -25,6 +25,15 @@ public interface UserService {
      */
     UserLoginSuccessVO userLogin(UserLoginDTO userLoginDTO);
 
+
+    /**
+     * 根据用户ID获取用户信息。
+     *
+     * @param userId 用户ID
+     * @return 用户登录成功数据传输对象。
+     */
+    UserLoginSuccessVO getUserInfoByToken(Integer userId);
+
     /**
      * 更新用户个人资料。
      *

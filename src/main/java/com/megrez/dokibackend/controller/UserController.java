@@ -64,6 +64,20 @@ public class UserController {
         }
     }
 
+    @GetMapping("/userInfoByToken")
+    public Result<UserLoginSuccessVO> getUserInfoByToken(HttpServletRequest request) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        log.info("getUserInfoByToken: userId={}", userId);
+        try {
+            // 解析出token
+
+            return Result.success(userService.getUserInfoByToken(userId));
+        } catch (Exception e) {
+            log.error("获取用户信息失败: {}", e.getMessage());
+            return Result.error("获取用户信息失败");
+        }
+    }
+
     /**
      * 获取用户信息
      *

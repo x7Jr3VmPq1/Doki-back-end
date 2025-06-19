@@ -75,4 +75,16 @@ public class MessageController {
         directMessageDTO.setUserId(userId);
         return Result.success(messageService.sendMessage(directMessageDTO));
     }
+
+    /**
+     * 删除指定会话的所有消息
+     *
+     * @param conversationId 会话ID
+     */
+    @DeleteMapping("/messages")
+    public Result<String> delMessages(HttpServletRequest request, @RequestParam String conversationId) {
+        Integer userId = (Integer) request.getAttribute("userId");
+        messageService.delMessages(conversationId, userId);
+        return Result.success();
+    }
 }

@@ -71,11 +71,35 @@ public class UserServiceImpl implements UserService {
         if (user1 != null && PasswordUtils.matchPassword(userLoginDTO.getPassword(), user1.getPasswordHash())) {
             // 生成并返回 JWT Token
             String token = JWTUtil.generateToken(user1.getUserName(), user1.getId());
-            return new UserLoginSuccessVO(token, user1.getId(), user1.getUserName(), user1.getAvatarUrl(), user1.getBio());
+            return new UserLoginSuccessVO(
+                    token,
+                    user1.getId(),
+                    user1.getUserName(),
+                    user1.getAvatarUrl(),
+                    user1.getBio(),
+                    user1.getFollowingCount(),
+                    user1.getFollowerCount());
         } else {
             // 抛出登录失败的异常
             throw new RuntimeException("登录失败，用户名或密码错误");
         }
+    }
+
+    @Override
+    public UserLoginSuccessVO getUserInfoByToken(Integer userId) {
+        User userById = userMapper.getUserById(userId);
+        if (userById == null) {
+            throw new InvalidUserIdException("用户不存在");
+        }
+
+        return new UserLoginSuccessVO(
+                null,
+                userById.getId(),
+                userById.getUserName(),
+                userById.getAvatarUrl(),
+                userById.getBio(),
+                userById.getFollowingCount(),
+                userById.getFollowerCount());
     }
 
     /**

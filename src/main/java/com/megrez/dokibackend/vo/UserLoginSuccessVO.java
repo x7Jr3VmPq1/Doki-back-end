@@ -17,4 +17,8 @@ public class UserLoginSuccessVO {
     private String avatarUrl;
     // 个人简介
     private String bio;
+    // 关注数
+    private Integer followingCount;
+    // 粉丝数
+    private Integer followerCount;
 }
