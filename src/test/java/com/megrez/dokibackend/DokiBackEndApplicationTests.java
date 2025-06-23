@@ -20,6 +20,10 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+
+import com.megrez.dokibackend.utils.videoDocument;
+
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +41,15 @@ class DokiBackEndApplicationTests {
 
     @Test
     void contextLoads() throws IOException {
-        searchStatsMergeTask.mergeRedisSearchStatsToDb();
+        List<VideoVO> allVideos = videosService.getAllVideos(10014);
+        allVideos.forEach(videoVO -> {
+            try {
+                videoDocument videoDocument = new videoDocument(videoVO);
+                ElasticsearchUtil.insertDocument(ElasticsearchUtil.VIDEOS_INDEX, videoVO.getId().toString(), videoDocument);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     @Test

@@ -99,7 +99,7 @@ public class ElasticsearchUtil {
                         new HighlightBuilder()
                                 .field("title")
                                 // 设置高亮标签
-                                .preTags("<span style='color:skyblue'>")
+                                .preTags("<span style='color:#fe2c55'>")
                                 .postTags("</span>")
                 );
         // 2.发送请求
