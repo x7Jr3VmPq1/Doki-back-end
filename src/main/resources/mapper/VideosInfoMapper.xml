@@ -4,13 +4,13 @@
     <!--  返回所有的视频列表  -->
     <select id="getAllVideos" resultType="com.megrez.dokibackend.entity.Video">
         SELECT v.*, u.username, u.avatar_url
-        FROM Videos v
+        FROM videos v
                  LEFT JOIN users u ON v.user_id = u.id
     </select>
     <!-- 根据关键词搜索视频 -->
     <select id="searchVideosByKeyword" resultType="com.megrez.dokibackend.entity.Video">
         SELECT DISTINCT v.*, u.username, u.avatar_url
-        FROM Videos v
+        FROM videos v
                  LEFT JOIN users u ON v.user_id = u.id
                  LEFT JOIN video_tags ON v.id = video_tags.video_id
         WHERE v.title LIKE CONCAT('%', #{keyword}, '%')
@@ -37,14 +37,14 @@
     <!-- 根据用户名查询视频信息  -->
     <select id="getVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
         SELECT v.*, u.username, u.avatar_url
-        FROM Videos v
+        FROM videos v
                  LEFT JOIN users u ON v.user_id = u.id
         WHERE u.username = #{userName}
     </select>
     <!--  根据用户名获取点赞视频列表  -->
     <select id="getLikeVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
         SELECT v.*, u.username, u.avatar_url
-        FROM Videos v
+        FROM videos v
                  LEFT JOIN video_likes l ON v.id = l.video_id
                  LEFT JOIN users u ON v.user_id = u.id
         WHERE l.user_id = (SELECT id
@@ -54,7 +54,7 @@
     <!--  根据用户名获取收藏视频列表  -->
     <select id="getFavoriteVideosByUserName" resultType="com.megrez.dokibackend.vo.VideoVO">
         SELECT v.*, u.username, u.avatar_url
-        FROM Videos v
+        FROM videos v
                  LEFT JOIN favorites f ON v.id = f.video_id
                  LEFT JOIN users u ON v.user_id = u.id
         WHERE f.user_id = (SELECT id
