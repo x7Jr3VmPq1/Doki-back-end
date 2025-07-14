@@ -70,7 +70,6 @@ public class UserController {
         log.info("getUserInfoByToken: userId={}", userId);
         try {
             // 解析出token
-
             return Result.success(userService.getUserInfoByToken(userId));
         } catch (Exception e) {
             log.error("获取用户信息失败: {}", e.getMessage());
