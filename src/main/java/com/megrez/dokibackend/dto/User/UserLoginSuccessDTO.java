@@ -1,8 +1,7 @@
-package com.megrez.dokibackend.dto;
+package com.megrez.dokibackend.dto.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Setter;
 
 @Data
 @AllArgsConstructor

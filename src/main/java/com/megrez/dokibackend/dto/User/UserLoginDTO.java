@@ -1,4 +1,4 @@
-package com.megrez.dokibackend.dto;
+package com.megrez.dokibackend.dto.User;
 
 import lombok.Data;
 

@@ -19,6 +19,8 @@ import com.megrez.dokibackend.mapper.VideosInfoMapper;
 import com.megrez.dokibackend.service.VideosService;
 import com.megrez.dokibackend.utils.*;
 import com.megrez.dokibackend.vo.VideoVO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,6 +44,7 @@ import java.util.function.Supplier;
 @Service
 public class VideosServiceImpl implements VideosService {
 
+    private static final Logger log = LoggerFactory.getLogger(VideosServiceImpl.class);
     private final VideosInfoMapper videosInfoMapper;
     private final VideoMapper videoMapper;
     private final ApplicationEventPublisher eventPublisher;
@@ -82,6 +85,7 @@ public class VideosServiceImpl implements VideosService {
             BeanUtils.copyProperties(video, videoVO);
             videoVOList.add(videoVO);
         }
+        log.info("获取成功！");
         return videoVOList;
     }
 

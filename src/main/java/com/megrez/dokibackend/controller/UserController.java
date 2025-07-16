@@ -1,16 +1,15 @@
 package com.megrez.dokibackend.controller;
 
 import com.megrez.dokibackend.common.Result;
-import com.megrez.dokibackend.dto.UserLoginDTO;
-import com.megrez.dokibackend.dto.UserProfileDTO;
-import com.megrez.dokibackend.dto.UserRegisterDTO;
+import com.megrez.dokibackend.dto.User.UserLoginDTO;
+import com.megrez.dokibackend.dto.User.UserProfileDTO;
+import com.megrez.dokibackend.dto.User.UserRegisterDTO;
 import com.megrez.dokibackend.entity.User;
 import com.megrez.dokibackend.exception.InvalidUserIdException;
 import com.megrez.dokibackend.exception.UsernameAlreadyExistsException;
 import com.megrez.dokibackend.service.UserService;
 import com.megrez.dokibackend.vo.UserLoginSuccessVO;
 import com.megrez.dokibackend.vo.UserProfilesVO;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;

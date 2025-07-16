@@ -1,7 +1,7 @@
 package com.megrez.dokibackend.service;
 
-import com.megrez.dokibackend.dto.UserLoginDTO;
-import com.megrez.dokibackend.dto.UserRegisterDTO;
+import com.megrez.dokibackend.dto.User.UserLoginDTO;
+import com.megrez.dokibackend.dto.User.UserRegisterDTO;
 import com.megrez.dokibackend.vo.UserLoginSuccessVO;
 import com.megrez.dokibackend.vo.UserProfilesVO;
 import com.megrez.dokibackend.entity.User;

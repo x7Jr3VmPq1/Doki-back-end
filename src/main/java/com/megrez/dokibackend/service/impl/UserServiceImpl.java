@@ -2,8 +2,8 @@ package com.megrez.dokibackend.service.impl;
 
 import com.megrez.dokibackend.common.FileServerURL;
 import com.megrez.dokibackend.common.LocalFilesPath;
-import com.megrez.dokibackend.dto.UserLoginDTO;
-import com.megrez.dokibackend.dto.UserRegisterDTO;
+import com.megrez.dokibackend.dto.User.UserLoginDTO;
+import com.megrez.dokibackend.dto.User.UserRegisterDTO;
 import com.megrez.dokibackend.entity.User;
 import com.megrez.dokibackend.exception.InvalidUserIdException;
 import com.megrez.dokibackend.exception.UsernameAlreadyExistsException;
@@ -16,7 +16,6 @@ import com.megrez.dokibackend.vo.UserLoginSuccessVO;
 import com.megrez.dokibackend.vo.UserProfilesVO;
 import com.megrez.dokibackend.vo.VideoVO;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Base64Utils;
