@@ -1,10 +1,12 @@
 package com.megrez.dokibackend;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.megrez.dokibackend.common.FileServerURL;
 import com.megrez.dokibackend.config.RabbitConfig;
 import com.megrez.dokibackend.entity.Video;
+import com.megrez.dokibackend.service.SmsService;
 import com.megrez.dokibackend.service.VideosService;
 import com.megrez.dokibackend.task.SearchStatsMergeTask;
 import com.megrez.dokibackend.utils.*;
@@ -38,6 +40,9 @@ class DokiBackEndApplicationTests {
 
     @Autowired
     SearchStatsMergeTask searchStatsMergeTask;
+
+    @Autowired
+    SmsService smsService;
 
     @Test
     void contextLoads() throws IOException {
@@ -113,5 +118,16 @@ class DokiBackEndApplicationTests {
     void testFileMove() throws IOException {
         int videoDuration = FFmpegUtils.getVideoDuration("db3a8f8c-6a4f-4573-8c5d-f79f28beee22");
         System.out.println(videoDuration);
+    }
+
+    @Test
+    void testSms() throws JsonProcessingException {
+        String s = smsService.sendCode("1311234567");
+        System.out.println(s);
+    }
+
+    @Test
+    void testVerifyCode() throws JsonProcessingException {
+        System.out.println(smsService.verifyCode("1311234567", "228880"));
     }
 }

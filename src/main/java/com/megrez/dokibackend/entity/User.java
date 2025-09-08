@@ -1,14 +1,16 @@
 package com.megrez.dokibackend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 // 用户实体类
 @Data
-@Getter
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
     // 用户ID
     private Integer id;

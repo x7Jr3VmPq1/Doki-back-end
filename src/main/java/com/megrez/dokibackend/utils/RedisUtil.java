@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class RedisUtil {
@@ -18,9 +19,16 @@ public class RedisUtil {
         this.redisTemplate = redisTemplate;
     }
 
+    // 设置一个永久KV
     public void set(String key, String value) {
         stringRedisTemplate.opsForValue().set(key, value);
     }
+
+    // 设置一个带过期时间的KV
+    public void set(String key, String value, long timeout, TimeUnit unit) {
+        stringRedisTemplate.opsForValue().set(key, value, timeout, unit);
+    }
+
 
     public String get(String key) {
         return stringRedisTemplate.opsForValue().get(key);
