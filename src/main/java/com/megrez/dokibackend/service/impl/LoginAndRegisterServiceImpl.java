@@ -3,13 +3,17 @@ package com.megrez.dokibackend.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.megrez.dokibackend.entity.User;
 import com.megrez.dokibackend.exception.InvalidCodeException;
+import com.megrez.dokibackend.exception.PasswordWrongException;
 import com.megrez.dokibackend.mapper.LoginAndRegisterMapper;
 import com.megrez.dokibackend.mapper.UserMapper;
 import com.megrez.dokibackend.service.LoginAndRegisterService;
 import com.megrez.dokibackend.service.SmsService;
 import com.megrez.dokibackend.utils.JWTUtil;
+import com.megrez.dokibackend.utils.PasswordUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 /**
@@ -32,27 +36,51 @@ public class LoginAndRegisterServiceImpl implements LoginAndRegisterService {
     }
 
     @Override
-    public String loginBySms(String phone, String code) throws JsonProcessingException {
+    public Map<String, String> loginBySms(String phone, String code) throws JsonProcessingException {
         // 1. 核对手机号和验证码是否有效
         boolean result = smsService.verifyCode(phone, code);
+        Map<String, String> data = new HashMap<>();
         if (result) {
-            // 2. 有效，判断用户是否已经注册，如果没有注册，添加新用户，返回token
+            // 2. 有效，判断用户是否已经注册，如果没有注册，添加新用户，添加token
             User userByPhone = loginAndRegisterMapper.getUserByPhone(phone);
             if (userByPhone == null) {
                 User newUser = addNewUser(phone);
-                return JWTUtil.generateToken(newUser.getUserName(), newUser.getId());
+                data.put("token", JWTUtil.generateToken(newUser.getUserName(), newUser.getId()));
             } else {
-                return JWTUtil.generateToken(userByPhone.getUserName(), userByPhone.getId());
+                data.put("token", JWTUtil.generateToken(userByPhone.getUserName(), userByPhone.getId()));
             }
+            // 3. 判断用户是否设置了密码
+            data.put("hasPassword", loginAndRegisterMapper.hasPassword(phone) != null ? "1" : "0");
+
+            // 返回结果
+            return data;
         } else {
-            // 3. 无效，抛出验证码错误异常
+            // 无效，抛出验证码错误异常
             throw new InvalidCodeException();
         }
     }
 
     @Override
-    public String loginByPassword(String phone, String password) {
-        return "";
+    public String loginByPassword(String phone, String rawPassword) {
+        // 1. 手机号为空，返回
+        if (phone == null) {
+            throw new PasswordWrongException("手机号或密码错误");
+        }
+        // 2. 查询用户信息
+        User userByPhone = loginAndRegisterMapper.getUserByPhone(phone);
+        // 3. 没有查询到用户，或者该用户没有设置密码，返回
+        if (userByPhone == null || userByPhone.getPasswordHash() == null) {
+            throw new PasswordWrongException("手机号或密码错误");
+        }
+        // 4. 比对密码
+        boolean matched = PasswordUtils.matchPassword(rawPassword, userByPhone.getPasswordHash());
+        if (matched) {
+            // 成功返回token
+            return JWTUtil.generateToken(userByPhone.getUserName(), userByPhone.getId());
+        } else {
+            // 比对失败，抛出密码错误异常
+            throw new PasswordWrongException("手机号或密码错误");
+        }
     }
 
     @Override
@@ -66,6 +94,13 @@ public class LoginAndRegisterServiceImpl implements LoginAndRegisterService {
         loginAndRegisterMapper.addNewUser(newUser);
         // 把创建好的用户返回给调用处
         return newUser;
+    }
+
+    @Override
+    public void setPassword(Long userId, String password) {
+        // 加密处理
+        String hashPassword = PasswordUtils.hashPassword(password);
+        loginAndRegisterMapper.setPassword(userId, hashPassword);
     }
 
     @Override

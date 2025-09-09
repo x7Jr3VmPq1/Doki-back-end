@@ -1,5 +1,6 @@
 package com.megrez.dokibackend.controller;
 
+import com.megrez.dokibackend.annotation.CurrentUser;
 import com.megrez.dokibackend.common.Result;
 import com.megrez.dokibackend.dto.User.UserLoginDTO;
 import com.megrez.dokibackend.dto.User.UserProfileDTO;
@@ -25,6 +26,7 @@ public class UserController {
     public UserController(UserService userService) {
         this.userService = userService;
     }
+
 
     /**
      * 注册

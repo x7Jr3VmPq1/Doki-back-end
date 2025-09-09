@@ -24,4 +24,22 @@ public interface LoginAndRegisterMapper {
             " VALUE (#{userName},#{phoneNumber},#{avatarUrl})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void addNewUser(User newUser);
+
+    /**
+     * 判断是否设置了密码
+     *
+     * @param phone
+     */
+    @Select("SELECT 1 FROM users WHERE phone_number = #{phone} AND password_hash IS NOT NULL")
+    String hasPassword(String phone);
+
+    /**
+     * 设置用户密码
+     *
+     * @param userId
+     * @param password
+     */
+    @Update("UPDATE users SET password_hash = #{password} WHERE id = #{userId}")
+    void setPassword(@Param("userId") Long userId, @Param("password") String password);
+
 }
